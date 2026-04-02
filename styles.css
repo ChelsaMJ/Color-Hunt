@@ -283,10 +283,19 @@ body.has-bg-image {
 
 .gallery-empty {
   column-span: all; text-align: center; padding: 80px 20px;
-  color: var(--text-dim); display: flex; flex-direction: column; align-items: center; gap: 16px;
+  color: var(--text-dim);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; width: 100%;
 }
 .empty-icon { opacity: 0.3; }
 .gallery-empty p { font-size: 1rem; color: var(--text-muted); }
+/* Ensure centering is preserved in all gallery modes */
+.gallery-grid.gm-coverflow .gallery-empty,
+.gallery-grid.gm-stack .gallery-empty,
+.gallery-grid.gm-reel .gallery-empty {
+  position: relative; width: 100%; min-height: 50vh;
+  transform: none; left: auto; top: auto;
+}
 
 .gallery-item {
   break-inside: avoid; margin-bottom: 16px; position: relative;
@@ -685,23 +694,9 @@ body.has-bg-image {
 /* Top bar */
 .lb-topbar {
   position: absolute; top: 0; left: 0; right: 0; z-index: 30;
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: flex-end;
   padding: 14px 20px;
 }
-.lb-style-picker {
-  display: flex; gap: 4px;
-  background: rgba(0,0,0,0.65); backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 5px;
-}
-.lb-sp-btn {
-  width: 34px; height: 34px; border-radius: 8px;
-  background: transparent; border: 1px solid transparent;
-  color: rgba(255,255,255,0.4); cursor: none;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s;
-}
-.lb-sp-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
-.lb-sp-btn.active { background: var(--accent); color: #000; border-color: transparent; }
 .lb-topbar-actions { display: flex; gap: 8px; }
 .lb-ctrl-btn {
   width: 40px; height: 40px; border-radius: 50%;
@@ -714,13 +709,39 @@ body.has-bg-image {
 .lb-ctrl-close:hover  { background: rgba(255,255,255,0.2); }
 
 /* Stage */
-.lb-stage { position: absolute; inset: 0; }
-.lb-img-wrap img { display: block; animation: lbFadeIn 0.4s cubic-bezier(0.34,1.1,0.64,1); }
-@keyframes lbFadeIn { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+.lb-stage {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Card track */
+.lb-card-track {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%; position: relative;
+}
+.lb-card {
+  position: absolute; border-radius: 14px; overflow: hidden;
+  transition: transform 0.45s cubic-bezier(0.4,0,0.2,1),
+              opacity   0.45s ease,
+              filter    0.45s ease;
+  will-change: transform;
+}
+.lb-card img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* Navigation animations */
+@keyframes lbFadeIn       { from{opacity:0;transform:scale(0.96)}                  to{opacity:1;transform:scale(1)} }
+@keyframes lbSlideLeftOut { from{opacity:1;transform:translateX(0) scale(1)}        to{opacity:0;transform:translateX(-60px) scale(0.94)} }
+@keyframes lbSlideRightOut{ from{opacity:1;transform:translateX(0) scale(1)}        to{opacity:0;transform:translateX( 60px) scale(0.94)} }
+@keyframes lbSlideLeftIn  { from{opacity:0;transform:translateX( 60px) scale(0.94)} to{opacity:1;transform:translateX(0) scale(1)} }
+@keyframes lbSlideRightIn { from{opacity:0;transform:translateX(-60px) scale(0.94)} to{opacity:1;transform:translateX(0) scale(1)} }
+.lb-slide-left-out  { animation: lbSlideLeftOut  0.18s ease forwards !important; }
+.lb-slide-right-out { animation: lbSlideRightOut 0.18s ease forwards !important; }
+.lb-slide-left-in   { animation: lbSlideLeftIn   0.35s cubic-bezier(0.34,1.1,0.64,1) forwards !important; }
+.lb-slide-right-in  { animation: lbSlideRightIn  0.35s cubic-bezier(0.34,1.1,0.64,1) forwards !important; }
 
 /* Nav buttons */
 .lb-nav {
-  position: absolute; z-index: 20;
+  position: absolute; z-index: 30;
   width: 52px; height: 52px; border-radius: 50%;
   background: rgba(255,255,255,0.06); backdrop-filter: blur(10px);
   border: 1px solid rgba(255,255,255,0.1); color: #fff; cursor: none;
@@ -728,6 +749,8 @@ body.has-bg-image {
   transition: all var(--transition);
 }
 .lb-nav:hover { background: rgba(255,255,255,0.16); transform: scale(1.08); }
+.lb-prev { left: 16px; }
+.lb-next { right: 16px; }
 
 /* Info overlay */
 .lb-info-overlay { position: absolute; z-index: 20; }
@@ -746,151 +769,95 @@ body.has-bg-image {
   font-size: 0.75rem; color: rgba(255,255,255,0.25); letter-spacing: 3px; font-weight: 500; z-index: 20;
 }
 
-/* ═══════════════════════════════════════════════════════
-   STYLE 1 — IMMERSIVE
-   Dark void · centered image · glass pill info at bottom
-   ═══════════════════════════════════════════════════════ */
-.lb-immersive { background: rgba(0,0,0,0.97); }
-.lb-immersive .lb-stage {
-  top: 64px; bottom: 90px; left: 0; right: 0;
-  display: flex; align-items: center; justify-content: center; padding: 0 80px;
-}
-.lb-immersive .lb-img-wrap {
-  max-width: min(900px, 86vw); width: 100%;
-  display: flex; align-items: center; justify-content: center;
-}
-.lb-immersive .lb-img-wrap img {
-  max-width: 100%; max-height: calc(100vh - 220px); object-fit: contain;
-  border-radius: 12px; box-shadow: 0 32px 80px rgba(0,0,0,0.9);
-}
-.lb-immersive .lb-info-overlay {
-  bottom: 14px; left: 50%; transform: translateX(-50%);
-  width: min(700px, 90vw);
-  background: rgba(4,4,4,0.82); backdrop-filter: blur(24px);
-  border: 1px solid rgba(255,255,255,0.07); border-radius: 18px;
-  padding: 16px 22px; display: flex; align-items: center; gap: 16px;
-  animation: lbSlideUp 0.4s ease;
-}
-@keyframes lbSlideUp { from{opacity:0;transform:translateX(-50%) translateY(16px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-.lb-immersive .lb-info-text { flex: 1; }
-.lb-immersive .lb-caption { font-size: 1rem; }
-.lb-immersive .lb-nav { top: 50%; transform: translateY(-50%); }
-.lb-immersive .lb-prev { left: 12px; }
-.lb-immersive .lb-next { right: 12px; }
+
 
 /* ═══════════════════════════════════════════════════════
-   STYLE 2 — MAGAZINE
-   Full-bleed image · dark editorial side panel
+   3D RING CAROUSEL  (GSAP · @johnblazek technique)
+   All photos spin on a true 3D ring — mouse steers it
    ═══════════════════════════════════════════════════════ */
-.lb-magazine { background: #000; }
-.lb-magazine .lb-stage {
-  top: 64px; bottom: 0; left: 0; right: 0; overflow: hidden;
+.lb-carousel3d {
+  background: radial-gradient(ellipse at 50% 65%, #0c0c14 0%, #000 68%);
 }
-.lb-magazine .lb-img-wrap {
-  position: absolute; top: 0; bottom: 0; left: 0; right: min(400px, 42vw);
+.lb-carousel3d::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; z-index: 5;
+  background: linear-gradient(90deg, transparent, var(--lb-color, var(--accent)) 40%, var(--lb-color, var(--accent)) 60%, transparent);
+  opacity: 0.6;
 }
-.lb-magazine .lb-img-wrap img {
-  width: 100%; height: 100%; object-fit: cover; border-radius: 0;
-}
-.lb-magazine .lb-info-overlay {
-  top: 0; bottom: 0; right: 0; width: min(400px, 42vw);
-  background: #030303; border-left: 1px solid rgba(255,255,255,0.06);
-  display: flex; flex-direction: column; justify-content: flex-end;
-  padding: 0 44px 60px;
-}
-.lb-magazine .lb-info-overlay::before {
-  content:''; position:absolute; top:0; left:0; right:0; height:3px;
-  background: var(--lb-color, var(--accent));
-}
-.lb-magazine .lb-caption { font-size: 1.6rem; letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 12px; }
-.lb-magazine .lb-meta { font-size: 0.88rem; }
-.lb-magazine .lb-nav {
-  top: auto; transform: none; bottom: 44px;
-  background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08);
-}
-.lb-magazine .lb-prev { left: calc(min(400px,42vw) + 20px); bottom: 44px; }
-.lb-magazine .lb-next { left: calc(min(400px,42vw) + 84px); bottom: 44px; }
-.lb-magazine .lb-counter { bottom: 54px; left: calc(min(400px,42vw) + 160px); transform: none; }
 
-/* ═══════════════════════════════════════════════════════
-   STYLE 3 — CINEMA
-   Letterbox film · full-width image · subtitle overlay
-   ═══════════════════════════════════════════════════════ */
-.lb-cinema { background: #000; }
-.lb-cinema .lb-topbar { background: #000; border-bottom: 1px solid #111; }
-.lb-cinema .lb-stage {
-  top: 65px; bottom: 65px; left: 0; right: 0;
+/* Stage — sets the 3D perspective for the scene */
+.lb-stage3d {
+  position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
+  perspective: 900px;
+  overflow: hidden;
 }
-/* Film strip bars */
-.lb-cinema .lb-stage::before,
-.lb-cinema .lb-stage::after {
-  content: ''; position: absolute; left: 0; right: 0; height: 65px;
-  background: #000; z-index: 5;
-  background-image: repeating-linear-gradient(90deg, transparent, transparent 16px, rgba(255,255,255,0.04) 16px, rgba(255,255,255,0.04) 18px);
+
+/* Spinning ring — GSAP controls rotationY / rotationX / z */
+.lb-carousel-ring {
+  position: relative;
+  width: 1px; height: 1px;          /* zero-sized pivot point */
+  transform-style: preserve-3d;
 }
-.lb-cinema .lb-stage::before { top: -65px; }
-.lb-cinema .lb-stage::after  { bottom: -65px; }
-.lb-cinema .lb-img-wrap {
+
+/* Individual photo card — GSAP positions each one on the ring */
+.lb-carousel-item {
+  position: absolute;
+  width: 260px; height: 380px;
+  left: 50%; top: 50%;
+  margin-left: -130px; margin-top: -190px;
+  visibility: hidden;               /* GSAP autoAlpha will reveal */
+  cursor: none;
+}
+
+.lb-carousel-item-inner {
   width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
+  border-radius: 16px; overflow: hidden;
+  border: 2px solid rgba(255,255,255,0.08);
+  box-shadow: 0 16px 50px rgba(0,0,0,0.75);
+  transition: border-color 0.4s, box-shadow 0.4s;
+  transform-style: preserve-3d;
 }
-.lb-cinema .lb-img-wrap img {
-  width: 100%; max-height: 100%; object-fit: contain; border-radius: 0;
-}
-.lb-cinema .lb-info-overlay {
-  bottom: -65px; left: 0; right: 0; height: 65px;
-  display: flex; align-items: center; justify-content: center; gap: 16px;
-  padding: 0 80px; z-index: 10;
-}
-.lb-cinema .lb-badge-row { display: none; }
-.lb-cinema .lb-caption {
-  font-size: 0.9rem; font-weight: 400; font-style: italic;
-  color: rgba(255,255,255,0.7); letter-spacing: 0.3px;
-}
-.lb-cinema .lb-meta { font-size: 0.75rem; color: rgba(255,255,255,0.3); margin: 0; }
-.lb-cinema .lb-info-text { display: flex; gap: 20px; align-items: center; }
-.lb-cinema .lb-nav { top: 50%; transform: translateY(-50%); background: transparent; border: none; }
-.lb-cinema .lb-nav:hover { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); }
-.lb-cinema .lb-prev { left: 20px; }
-.lb-cinema .lb-next { right: 20px; }
-.lb-cinema .lb-counter { bottom: auto; top: 50%; transform: translateY(-50%); left: 50%; transform: translate(-50%,-50%); font-size: 0.65rem; }
 
-/* ═══════════════════════════════════════════════════════
-   STYLE 4 — FRAMED
-   Week-colored accent border frame · info below
-   ═══════════════════════════════════════════════════════ */
-.lb-framed {
-  background: radial-gradient(ellipse at center, #0c0c0c 0%, #000 75%);
+.lb-carousel-item-inner img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
 }
-.lb-framed .lb-stage {
-  top: 64px; bottom: 110px; left: 0; right: 0;
-  display: flex; align-items: center; justify-content: center; padding: 0 80px;
+
+/* Front/active card glows with the week colour */
+.lb-carousel-item.lb-active .lb-carousel-item-inner {
+  border-color: var(--lb-color, var(--accent));
+  box-shadow: 0 24px 80px rgba(0,0,0,0.9),
+              0 0 60px var(--lb-glow, rgba(200,255,0,0.2));
 }
-.lb-framed .lb-img-wrap {
-  position: relative; border-radius: 8px; padding: 4px;
-  border-top: 3px solid var(--lb-color, var(--accent));
-  border-left: 1px solid rgba(255,255,255,0.07);
-  border-right: 1px solid rgba(255,255,255,0.07);
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-  box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 40px var(--lb-glow, rgba(200,255,0,0.08));
-  animation: framedIn 0.5s cubic-bezier(0.34,1.3,0.64,1);
+
+/* Info pill — sits at the bottom, shows the front card's details */
+.lb-carousel3d .lb-info-overlay {
+  bottom: 18px; left: 50%; transform: translateX(-50%);
+  width: min(640px, 90vw);
+  background: rgba(4,4,4,0.88); backdrop-filter: blur(28px);
+  border: 1px solid rgba(255,255,255,0.07); border-radius: 20px;
+  padding: 14px 22px; display: flex; align-items: center; gap: 16px;
+  animation: lbInfoUp 0.5s cubic-bezier(0.34,1.1,0.64,1);
+  z-index: 30;
 }
-@keyframes framedIn { from{opacity:0;transform:scale(0.94) translateY(12px)} to{opacity:1;transform:scale(1)} }
-.lb-framed .lb-img-wrap img {
-  max-width: min(800px, 82vw); max-height: calc(100vh - 250px);
-  object-fit: contain; border-radius: 5px; display: block;
+@keyframes lbInfoUp {
+  from { opacity:0; transform: translateX(-50%) translateY(16px); }
+  to   { opacity:1; transform: translateX(-50%) translateY(0);    }
 }
-.lb-framed .lb-info-overlay {
-  bottom: 14px; left: 50%; transform: translateX(-50%);
-  width: min(700px, 90vw);
-  display: flex; align-items: center; gap: 16px; padding: 12px 0;
+.lb-carousel3d .lb-info-text { flex: 1; min-width: 0; }
+.lb-carousel3d .lb-caption   { font-size: 1rem; }
+
+/* Counter */
+.lb-carousel3d .lb-counter {
+  bottom: 96px; left: 50%; transform: translateX(-50%);
+  font-size: 0.72rem; letter-spacing: 3px;
 }
-.lb-framed .lb-info-text { flex: 1; }
-.lb-framed .lb-caption { font-size: 1rem; }
-.lb-framed .lb-nav { top: 50%; transform: translateY(-50%); }
-.lb-framed .lb-prev { left: 12px; }
-.lb-framed .lb-next { right: 12px; }
+
+/* Nav arrows — sit above everything */
+.lb-carousel3d .lb-nav   { top: 50%; transform: translateY(-50%); z-index: 40; }
+.lb-carousel3d .lb-prev  { left: 18px; }
+.lb-carousel3d .lb-next  { right: 18px; }
+
+
 
 
 /* ── Confirm Modal ────────────────────────────────────── */

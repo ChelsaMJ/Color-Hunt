@@ -170,7 +170,7 @@ const clearAllWeeksBtn    = $('clearAllWeeksBtn');
 
 // Lightbox
 const lightboxOverlay = $('lightboxOverlay');
-const lbImage         = $('lbImage');
+const lbCarouselRing  = $('lbCarouselRing');
 const lbWeekBadge     = $('lbWeekBadge');
 const lbCaption       = $('lbCaption');
 const lbMeta          = $('lbMeta');
@@ -563,6 +563,8 @@ function renderGallery() {
 
   if (photos.length === 0) {
     galleryEmpty.style.display = 'flex';
+    galleryInfoBar.classList.remove('visible');
+    galleryCarouselNav.classList.remove('visible');
     return;
   }
   galleryEmpty.style.display = 'none';
@@ -797,54 +799,121 @@ async function deletePhoto(photoId) {
 }
 
 // ─────────────────────────────────────────────────
-// Lightbox — 4 Styles
+// Lightbox — 3D Ring Carousel  (GSAP · @johnblazek technique)
 // ─────────────────────────────────────────────────
-let lbIdx   = 0;
-let lbStyle = localStorage.getItem('colorhunt_lbstyle') || 'immersive';
+const CARD_W  = 260;   // card width  (px)
+const CARD_H  = 380;   // card height (px)
 
-const LB_STYLES = ['immersive', 'magazine', 'cinema', 'framed'];
+let lbIdx      = 0;    // index of the front-facing card
+let lbAddX     = 0;    // accumulated rotationY (degrees)
+let lbMouseX   = 0;    // per-frame velocity from mouse
+let lbMouseY   = 0;
+let lbLoopId   = null; // setInterval handle
+let lbRadius   = 0;    // computed ring radius
+let lbStepDeg  = 0;    // degrees per card (360/N)
 
-function applyLbStyle(style) {
-  lbStyle = style;
-  localStorage.setItem('colorhunt_lbstyle', style);
-  LB_STYLES.forEach(s => lightboxOverlay.classList.remove('lb-' + s));
-  lightboxOverlay.classList.add('lb-' + style);
-  document.querySelectorAll('.lb-sp-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.lbs === style);
+// --- Build the ring --------------------------------------------------
+function buildCarousel3d() {
+  lbCarouselRing.innerHTML = '';
+  const N = photos.length;
+  if (N === 0) return;
+
+  lbStepDeg = 360 / N;
+  // radius so adjacent card edges almost touch (half-chord formula)
+  lbRadius  = Math.round((CARD_W / 2) / Math.tan(Math.PI / N));
+
+  // Push the ring back by radius so items end up at z=0 on the near face
+  gsap.set(lbCarouselRing, { z: -lbRadius, transformStyle: 'preserve-3d' });
+
+  // Set initial rotation so lbIdx is at the front
+  lbAddX = -lbStepDeg * lbIdx;
+  gsap.set(lbCarouselRing, { rotationY: lbAddX });
+
+  photos.forEach((photo, i) => {
+    const item  = document.createElement('div');
+    item.className   = 'lb-carousel-item';
+    item.dataset.idx = i;
+
+    const inner = document.createElement('div');
+    inner.className  = 'lb-carousel-item-inner';
+
+    const img = document.createElement('img');
+    img.src     = photo.src;
+    img.alt     = photo.caption || '';
+    img.loading = 'lazy';
+
+    inner.appendChild(img);
+    item.appendChild(inner);
+    lbCarouselRing.appendChild(item);
+
+    // Position on ring: rotate each slice, then push out to radius
+    gsap.set(item, {
+      rotationY    : lbStepDeg * i,
+      z            : lbRadius,
+      transformOrigin: `50% 50% ${-lbRadius}px`,
+    });
+
+    // Fly-in animation (adapted from @johnblazek)
+    flyInCard(item, inner, i * 0.055);
+
+    item.addEventListener('click', () => goToCard(i));
+    addHover(item);
   });
+
+  updateActiveCard();
 }
 
-// Wire style picker buttons
-document.querySelectorAll('.lb-sp-btn').forEach(btn => {
-  btn.addEventListener('click', () => applyLbStyle(btn.dataset.lbs));
-  addHover(btn);
-});
+// Randomised fly-in (exactly as in the original pen)
+function flyInCard(item, inner, delay) {
+  const nz  = -3000 + Math.random() * 6000;
+  const nx  = -1500 + Math.random() * 3000;
+  const ny  = -1500 + Math.random() * 3000;
+  const nrY = 360  * (Math.random() > 0.5 ? 1 : -1);
+  const nrX = 360  * (Math.random() > 0.5 ? 1 : -1);
+  const dur = 1.4  + Math.random() * 0.5;
 
-function openLightbox(idx) {
-  lbIdx = idx;
-  applyLbStyle(lbStyle); // restore saved style
-  showLightboxPhoto();
-  lightboxOverlay.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeLightbox() {
-  lightboxOverlay.classList.remove('open');
-  document.body.style.overflow = '';
+  gsap.set(item,  { autoAlpha: 1,  delay });
+  gsap.set(inner, { z: nz, rotationY: nrY, rotationX: nrX, x: nx, y: ny, autoAlpha: 0 });
+  gsap.to(inner,  { duration: dur,       delay, rotationY: 0, rotationX: 0, z: 0, ease: 'expo.inOut' });
+  gsap.to(inner,  { duration: dur - 0.4, delay, x: 0, y: 0, autoAlpha: 1,  ease: 'expo.inOut' });
 }
 
-function showLightboxPhoto() {
-  if (photos.length === 0) { closeLightbox(); return; }
-  lbIdx = Math.max(0, Math.min(lbIdx, photos.length - 1));
+// --- Navigation ------------------------------------------------------
+function goToCard(targetIdx) {
+  const N = photos.length;
+  lbIdx   = ((targetIdx % N) + N) % N;
+
+  // Find shortest rotation path
+  const target = -lbStepDeg * lbIdx;
+  // Normalise current lbAddX to [-180*N, 180*N] so we snap cleanly
+  let diff = target - (lbAddX % 360);
+  if (diff >  180) diff -= 360;
+  if (diff < -180) diff += 360;
+  lbAddX += diff;
+
+  gsap.to(lbCarouselRing, { duration: 0.9, rotationY: lbAddX, ease: 'quint.out' });
+  updateActiveCard();
+}
+
+function navigateLightbox(dir) { goToCard(lbIdx + dir); }
+
+// --- Active card & info panel ----------------------------------------
+function updateActiveCard() {
+  document.querySelectorAll('.lb-carousel-item').forEach((el, i) => {
+    el.classList.toggle('lb-active', i === lbIdx);
+  });
+  updateLbInfo();
+}
+
+function updateLbInfo() {
   const photo = photos[lbIdx];
+  if (!photo) return;
   const week  = state.weeks.find(w => w.id === photo.weekId);
 
-  lbImage.src = photo.src;
-  lbImage.alt = photo.caption || '';
   lbCaption.textContent = photo.caption || 'Untitled';
   lbMeta.textContent    = `by ${photo.uploader || 'Anonymous'} · ${new Date(photo.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
   lbCounter.textContent = `${lbIdx + 1} / ${photos.length}`;
 
-  // Inject week color as CSS var for Magazine accent bar + Framed border
   const hex = week ? week.hex : 'var(--accent)';
   const rgb = week ? hexToRgb(week.hex) : '200,255,0';
   lightboxOverlay.style.setProperty('--lb-color', hex);
@@ -859,6 +928,58 @@ function showLightboxPhoto() {
   }
 }
 
+// --- Mouse-driven continuous spin (looper) ---------------------------
+function onLbMouseMove(e) {
+  lbMouseX = -(-(window.innerWidth  * 0.5) + e.pageX) * 0.0025;
+  lbMouseY = -(-(window.innerHeight * 0.5) + e.pageY) * 0.008;
+}
+
+function startLooper() {
+  if (lbLoopId) return;
+  lbLoopId = setInterval(() => {
+    lbAddX += lbMouseX;
+    gsap.to(lbCarouselRing, { duration: 1, rotationY: lbAddX, rotationX: lbMouseY, ease: 'quint.out' });
+
+    // Detect which card is nearest the camera (front)
+    if (photos.length > 0) {
+      const N   = photos.length;
+      const raw = Math.round(-lbAddX / lbStepDeg);
+      const idx = ((raw % N) + N) % N;
+      if (idx !== lbIdx) { lbIdx = idx; updateActiveCard(); }
+    }
+  }, 1000 / 60);
+}
+
+function stopLooper() {
+  if (lbLoopId) { clearInterval(lbLoopId); lbLoopId = null; }
+  lbMouseX = 0; lbMouseY = 0;
+}
+
+// --- Open / Close ----------------------------------------------------
+function openLightbox(idx) {
+  lbIdx  = idx;
+  lbAddX = 0;
+  buildCarousel3d();
+  lightboxOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  window.addEventListener('mousemove', onLbMouseMove);
+  startLooper();
+}
+
+function closeLightbox() {
+  lightboxOverlay.classList.remove('open');
+  document.body.style.overflow = '';
+  window.removeEventListener('mousemove', onLbMouseMove);
+  stopLooper();
+  // Clear stale info panel immediately
+  lbCaption.textContent      = '';
+  lbMeta.textContent         = '';
+  lbCounter.textContent      = '';
+  lbWeekBadge.style.display  = 'none';
+  // Clear ring after fade-out
+  setTimeout(() => { lbCarouselRing.innerHTML = ''; }, 350);
+}
+
 function hexToRgb(hex) {
   const r = parseInt(hex.slice(1,3),16);
   const g = parseInt(hex.slice(3,5),16);
@@ -868,25 +989,22 @@ function hexToRgb(hex) {
 
 $('lbClose').addEventListener('click', closeLightbox);
 lightboxOverlay.addEventListener('click', (e) => { if (e.target === lightboxOverlay) closeLightbox(); });
-$('lbPrev').addEventListener('click', () => { lbIdx = (lbIdx - 1 + photos.length) % photos.length; showLightboxPhoto(); });
-$('lbNext').addEventListener('click', () => { lbIdx = (lbIdx + 1) % photos.length; showLightboxPhoto(); });
+$('lbPrev').addEventListener('click', () => navigateLightbox(-1));
+$('lbNext').addEventListener('click', () => navigateLightbox(1));
 $('lbDelete').addEventListener('click', () => { const p = photos[lbIdx]; if (p) deletePhoto(p.id); });
 
 document.addEventListener('keydown', (e) => {
   if (!lightboxOverlay.classList.contains('open')) return;
   if (e.key === 'Escape')      closeLightbox();
-  if (e.key === 'ArrowLeft')  { lbIdx = (lbIdx - 1 + photos.length) % photos.length; showLightboxPhoto(); }
-  if (e.key === 'ArrowRight') { lbIdx = (lbIdx + 1) % photos.length; showLightboxPhoto(); }
+  if (e.key === 'ArrowLeft')  navigateLightbox(-1);
+  if (e.key === 'ArrowRight') navigateLightbox(1);
 });
 
 let lbTouchX = 0;
 lightboxOverlay.addEventListener('touchstart', e => { lbTouchX = e.touches[0].clientX; }, { passive: true });
 lightboxOverlay.addEventListener('touchend', e => {
   const diff = lbTouchX - e.changedTouches[0].clientX;
-  if (Math.abs(diff) > 50) {
-    lbIdx = diff > 0 ? (lbIdx + 1) % photos.length : (lbIdx - 1 + photos.length) % photos.length;
-    showLightboxPhoto();
-  }
+  if (Math.abs(diff) > 50) navigateLightbox(diff > 0 ? 1 : -1);
 });
 
 

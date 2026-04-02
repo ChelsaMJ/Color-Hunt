@@ -528,25 +528,22 @@
     </div>
   </div>
 
-  <!-- LIGHTBOX (4 viewing styles) -->
-  <div class="lightbox-overlay lb-immersive" id="lightboxOverlay">
+  <!-- LIGHTBOX — 3D Ring Carousel (GSAP) -->
+  <div class="lightbox-overlay lb-carousel3d" id="lightboxOverlay">
     <div class="lb-topbar">
-      <div class="lb-style-picker" id="lbStylePicker">
-        <button class="lb-sp-btn active" data-lbs="immersive" title="Immersive"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></button>
-        <button class="lb-sp-btn" data-lbs="magazine" title="Magazine"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg></button>
-        <button class="lb-sp-btn" data-lbs="cinema" title="Cinema"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="10" rx="1"/><line x1="7" y1="7" x2="7" y2="17"/><line x1="17" y1="7" x2="17" y2="17"/></svg></button>
-        <button class="lb-sp-btn" data-lbs="framed" title="Framed"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg></button>
-      </div>
       <div class="lb-topbar-actions">
         <button class="lb-ctrl-btn lb-ctrl-delete" id="lbDelete" title="Delete photo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg></button>
         <button class="lb-ctrl-btn lb-ctrl-close" id="lbClose" title="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
     </div>
-    <div class="lb-stage">
-      <button class="lb-nav lb-prev" id="lbPrev"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <div class="lb-img-wrap"><img id="lbImage" src="" alt="" /></div>
-      <button class="lb-nav lb-next" id="lbNext"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+    <!-- 3D ring stage -->
+    <div class="lb-stage3d" id="lbStage3d">
+      <div class="lb-carousel-ring" id="lbCarouselRing"></div>
     </div>
+    <!-- Side nav arrows -->
+    <button class="lb-nav lb-prev" id="lbPrev"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <button class="lb-nav lb-next" id="lbNext"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+    <!-- Info panel -->
     <div class="lb-info-overlay" id="lbInfoPanel">
       <div class="lb-badge-row"><span class="lb-week-badge" id="lbWeekBadge"></span></div>
       <div class="lb-info-text">
@@ -594,6 +591,7 @@
     <p>Made with <span style="color:#ffffff">♥</span> for Color Hunters</p>
   </footer>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="app.js"></script>
 </body>
 
