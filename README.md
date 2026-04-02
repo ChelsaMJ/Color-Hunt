@@ -13,7 +13,7 @@ A personal photo gallery web app built for collecting and showcasing weekly colo
 - **Gallery info bar** — shows caption, uploader, and date for the active card in non-grid modes
 
 ### Lightbox — 3D Ring Carousel
-- All photos arranged on a **true 3D rotating ring** (inspired by [@johnblazek's TweenMax pen](https://codepen.io/johnblazek/pen/EgWbPw))
+- All photos arranged on a **true 3D rotating ring**
 - **Mouse-steered** — move your cursor left/right to spin the ring; up/down tilts it
 - **Fly-in animation** — each card animates in from a random 3D position on open
 - **Click any card** to snap it to the front
@@ -106,7 +106,7 @@ Color Hunt/
 
 ## Credits
 
-- 3D carousel technique inspired by [John Blazek's TweenMax pen](https://codepen.io/johnblazek/pen/EgWbPw)
+- 3D carousel technique inspired by John Blazek's TweenMax pen
 - 3D animations powered by [GSAP](https://gsap.com/)
 - Icons from inline SVG (no icon library dependency)
 
